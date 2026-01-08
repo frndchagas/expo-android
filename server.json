@@ -1,0 +1,54 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.frndchagas/expo-android",
+  "title": "Expo Android MCP",
+  "description": "MCP server for Android emulator automation via ADB.",
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@fndchagas/expo-android",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "ADB_PATH",
+          "description": "Path to adb executable.",
+          "default": "adb"
+        },
+        {
+          "name": "ADB_SERIAL",
+          "description": "Device serial to target (optional)."
+        },
+        {
+          "name": "ADB_TIMEOUT_MS",
+          "description": "Timeout for adb commands in milliseconds.",
+          "default": "15000"
+        },
+        {
+          "name": "ADB_MAX_BUFFER_MB",
+          "description": "Max buffer size for adb output in MB.",
+          "default": "10"
+        },
+        {
+          "name": "MCP_TRANSPORT",
+          "description": "Transport: stdio, http, or both.",
+          "default": "stdio"
+        },
+        {
+          "name": "PORT",
+          "description": "HTTP port when MCP_TRANSPORT is http or both.",
+          "default": "7332"
+        }
+      ]
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/frndchagas/expo-android",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/frndchagas/expo-android"
+}

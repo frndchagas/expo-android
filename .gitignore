@@ -1,0 +1,8 @@
+node_modules
+.DS_Store
+.env
+.env.*
+dist
+*.log
+.mcpregistry_github_token
+.mcpregistry_registry_token
