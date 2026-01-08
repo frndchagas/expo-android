@@ -41,14 +41,13 @@ jobs:
 
       - name: Install mcp-publisher
         run: |
-          VERSION="latest"
           ARCH="$(uname -m)"
           case "$ARCH" in
             x86_64) ARCH="amd64" ;;
             aarch64|arm64) ARCH="arm64" ;;
           esac
           OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
-          curl -sL "https://github.com/modelcontextprotocol/registry/releases/download/${VERSION}/mcp-publisher_${OS}_${ARCH}.tar.gz" | tar xz
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_${OS}_${ARCH}.tar.gz" | tar xz
           mv mcp-publisher /usr/local/bin/mcp-publisher
 
       - name: Publish to MCP Registry (OIDC)
