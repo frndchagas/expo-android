@@ -1,0 +1,80 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve version
+        id: version
+        run: |
+          git pull --rebase origin main
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            npm version patch --no-git-tag-version
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            git add package.json package-lock.json
+            git commit -m "chore: release v$NEW_VERSION [skip ci]"
+            git pull --rebase origin main
+            git push
+          else
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Sync server.json version
+        run: |
+          node -e "const fs=require('fs');const pkg=require('./package.json');const server=JSON.parse(fs.readFileSync('server.json','utf8'));server.version=pkg.version;if (server.packages?.[0]) server.packages[0].version=pkg.version;fs.writeFileSync('server.json', JSON.stringify(server,null,2)+'\\n');"
+
+      - name: Install mcp-publisher
+        run: |
+          VERSION="latest"
+          ARCH="$(uname -m)"
+          case "$ARCH" in
+            x86_64) ARCH="amd64" ;;
+            aarch64|arm64) ARCH="arm64" ;;
+          esac
+          OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/download/${VERSION}/mcp-publisher_${OS}_${ARCH}.tar.gz" | tar xz
+          mv mcp-publisher /usr/local/bin/mcp-publisher
+
+      - name: Publish to MCP Registry (OIDC)
+        run: |
+          mcp-publisher login github-oidc
+          mcp-publisher publish
