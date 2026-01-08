@@ -3,13 +3,13 @@
   "name": "io.github.frndchagas/expo-android",
   "title": "Expo Android MCP",
   "description": "MCP server for Android emulator automation via ADB.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@fndchagas/expo-android",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "transport": {
         "type": "stdio"
       },
@@ -21,7 +21,7 @@
         },
         {
           "name": "ADB_SERIAL",
-          "description": "Device serial to target (optional, auto-detects if only one device is connected)."
+          "description": "Device serial to target (optional, use 'auto' to clear and auto-detect)."
         },
         {
           "name": "ADB_TIMEOUT_MS",

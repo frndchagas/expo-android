@@ -30,29 +30,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Resolve version
-        id: version
-        run: |
-          git pull --rebase origin main
-          NAME=$(node -p "require('./package.json').name")
-          VERSION=$(node -p "require('./package.json').version")
-          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
-            npm version patch --no-git-tag-version
-            NEW_VERSION=$(node -p "require('./package.json').version")
-            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-            git add package.json package-lock.json
-            git commit -m "chore: release v$NEW_VERSION [skip ci]"
-            git pull --rebase origin main
-            git push
-          else
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-          fi
-
       - name: Publish
         run: npm publish --access public
         env:

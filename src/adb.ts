@@ -25,6 +25,7 @@ type AdbDevice = {
 
 let resolvedSerial: string | null | undefined;
 let resolvingSerial: Promise<string | null> | null = null;
+let serialOverride: string | null | undefined;
 
 function logDebug(message: string) {
   if (!ADB_DEBUG) return;
@@ -46,6 +47,40 @@ function parseDevicesOutput(output: string): AdbDevice[] {
   });
 }
 
+type RequestedSerial = {
+  serial: string | null;
+  source: 'override' | 'env' | null;
+};
+
+type AdbSerialState = {
+  serial: string | null;
+  source: 'override' | 'env' | 'auto' | 'fallback' | 'none';
+  requestedSerial: string | null;
+  requestedSerialSource: RequestedSerial['source'];
+  warning?: string;
+  error?: string;
+};
+
+function getRequestedSerial(): RequestedSerial {
+  if (serialOverride !== undefined) {
+    return { serial: serialOverride, source: 'override' };
+  }
+  if (ADB_SERIAL) {
+    return { serial: ADB_SERIAL, source: 'env' };
+  }
+  return { serial: null, source: null };
+}
+
+async function assertSerialAvailable(serial: string) {
+  const devices = await adbListDevices();
+  const online = devices.filter((device) => device.state === 'device');
+  if (online.some((device) => device.serial === serial)) return;
+  const available = online.map((device) => device.serial).join(', ') || 'none';
+  throw new Error(
+    `Device ${serial} not found. Available devices: ${available}.`
+  );
+}
+
 async function adbExecRaw(args: string[], options: ExecOptions = {}) {
   const { serial: _serial, ...execOptions } = options;
   return execFileAsync(ADB_PATH, args, {
@@ -56,20 +91,26 @@ async function adbExecRaw(args: string[], options: ExecOptions = {}) {
 }
 
 export async function adbExec(args: string[], options: ExecOptions = {}) {
-  const serial =
-    options.serial === null
-      ? undefined
-      : options.serial ?? (await resolveAdbSerial());
+  let serial: string | null | undefined;
+  if (options.serial === null) {
+    serial = undefined;
+  } else if (typeof options.serial === 'string' && options.serial.trim() !== '') {
+    const explicitSerial = options.serial.trim();
+    await assertSerialAvailable(explicitSerial);
+    serial = explicitSerial;
+  } else {
+    serial = await resolveAdbSerial();
+  }
   const finalArgs = serial ? ['-s', serial, ...args] : args;
   return adbExecRaw(finalArgs, options);
 }
 
-export async function adbShell(command: string) {
-  return adbExec(['shell', command]);
+export async function adbShell(command: string, options: ExecOptions = {}) {
+  return adbExec(['shell', command], options);
 }
 
-export async function adbExecOut(args: string[]) {
-  return adbExec(['exec-out', ...args], { encoding: 'buffer' });
+export async function adbExecOut(args: string[], options: ExecOptions = {}) {
+  return adbExec(['exec-out', ...args], { encoding: 'buffer', ...options });
 }
 
 export async function adbListDevices() {
@@ -77,34 +118,88 @@ export async function adbListDevices() {
   return parseDevicesOutput(toText(stdout));
 }
 
+async function computeAdbSerialState({
+  strict,
+}: {
+  strict: boolean;
+}): Promise<AdbSerialState> {
+  const { serial: requestedSerial, source: requestedSerialSource } =
+    getRequestedSerial();
+  const devices = await adbListDevices();
+  const online = devices.filter((device) => device.state === 'device');
+  const availableSerials = online.map((device) => device.serial);
+
+  const baseState: AdbSerialState = {
+    serial: null,
+    source: 'none',
+    requestedSerial,
+    requestedSerialSource,
+  };
+
+  if (requestedSerial) {
+    if (availableSerials.includes(requestedSerial)) {
+      return {
+        ...baseState,
+        serial: requestedSerial,
+        source: requestedSerialSource ?? 'env',
+      };
+    }
+
+    if (online.length === 1) {
+      const fallbackSerial = online[0].serial;
+      return {
+        ...baseState,
+        serial: fallbackSerial,
+        source: 'fallback',
+        warning: `Requested device ${requestedSerial} not found. Falling back to ${fallbackSerial}.`,
+      };
+    }
+
+    const available = availableSerials.length
+      ? availableSerials.join(', ')
+      : 'none';
+    const message =
+      online.length === 0
+        ? `Requested device ${requestedSerial} not found and no devices are connected.`
+        : `Requested device ${requestedSerial} not found. Available devices: ${available}.`;
+    if (strict) {
+      throw new Error(message);
+    }
+    return { ...baseState, error: message };
+  }
+
+  if (online.length === 1) {
+    return {
+      ...baseState,
+      serial: online[0].serial,
+      source: 'auto',
+    };
+  }
+
+  const message =
+    online.length === 0
+      ? 'No adb devices detected. Start an emulator or connect a device.'
+      : `Multiple devices detected (${availableSerials.join(
+          ', '
+        )}). Set ADB_SERIAL or use setDevice.`;
+  if (strict) {
+    throw new Error(message);
+  }
+  return { ...baseState, error: message };
+}
+
 export async function resolveAdbSerial({ strict = true } = {}) {
-  if (ADB_SERIAL) return ADB_SERIAL;
-  if (resolvedSerial !== undefined) return resolvedSerial;
+  if (resolvedSerial !== undefined && strict) {
+    return resolvedSerial;
+  }
   if (!resolvingSerial) {
     resolvingSerial = (async () => {
-      const devices = await adbListDevices();
-      const online = devices.filter((device) => device.state === 'device');
-
-      if (online.length === 1) {
-        resolvedSerial = online[0].serial;
-        logDebug(`Auto-selected device serial ${resolvedSerial}.`);
-        return resolvedSerial;
+      const state = await computeAdbSerialState({ strict });
+      resolvedSerial = state.serial;
+      if (state.warning) {
+        logDebug(state.warning);
       }
-
-      resolvedSerial = null;
-      if (online.length === 0) {
-        logDebug('No adb devices detected.');
-        return null;
-      }
-
-      if (strict) {
-        const serials = online.map((device) => device.serial).join(', ');
-        throw new Error(
-          `Multiple devices detected (${serials}). Set ADB_SERIAL to target a device.`
-        );
-      }
-
-      return null;
+      return state.serial;
     })();
   }
 
@@ -144,4 +239,36 @@ export async function assertAdbAvailable() {
   } catch (error) {
     throw new Error(formatAdbNotFoundMessage(error));
   }
+}
+
+export async function getAdbSerialState({ strict = false } = {}) {
+  try {
+    return await computeAdbSerialState({ strict });
+  } catch (error) {
+    const { serial: requestedSerial, source: requestedSerialSource } =
+      getRequestedSerial();
+    return {
+      serial: null,
+      source: 'none',
+      requestedSerial,
+      requestedSerialSource,
+      error: error instanceof Error ? error.message : String(error),
+    } satisfies AdbSerialState;
+  }
+}
+
+export function setAdbSerialOverride(serial?: string | null) {
+  if (serial === undefined) {
+    serialOverride = undefined;
+    resolvedSerial = undefined;
+    return;
+  }
+  if (serial === null) {
+    serialOverride = null;
+    resolvedSerial = undefined;
+    return;
+  }
+  const trimmed = serial.trim();
+  serialOverride = trimmed.toLowerCase() === 'auto' ? null : trimmed;
+  resolvedSerial = undefined;
 }
