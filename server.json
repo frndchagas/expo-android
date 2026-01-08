@@ -3,13 +3,13 @@
   "name": "io.github.frndchagas/expo-android",
   "title": "Expo Android MCP",
   "description": "MCP server for Android emulator automation via ADB.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@fndchagas/expo-android",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "transport": {
         "type": "stdio"
       },
