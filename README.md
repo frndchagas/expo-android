@@ -29,12 +29,28 @@ npm install -g @fndchagas/expo-android
 npx -y @fndchagas/expo-android
 ```
 
+## Quickstart
+
+1. Start an emulator or connect a device.
+2. Run `doctor` to validate adb + device selection.
+3. Use `inspect`, `tapElement`, `inputText`, etc.
+
+Example:
+
+```ts
+await client.callTool({ name: 'expo-android.doctor', arguments: {} });
+await client.callTool({
+  name: 'expo-android.inspect',
+  arguments: { onlyInteractive: true, maxElements: 200 },
+});
+```
+
 ## Use with Claude Code CLI
 
 ```bash
 claude mcp add expo-android \
   --env ADB_PATH="$HOME/Library/Android/sdk/platform-tools/adb" \
-  --env ADB_SERIAL="emulator-5554" \
+  --env ADB_SERIAL="auto" \
   -- npx -y @fndchagas/expo-android
 ```
 
@@ -43,7 +59,7 @@ claude mcp add expo-android \
 ```bash
 codex mcp add expo-android \
   --env ADB_PATH="$HOME/Library/Android/sdk/platform-tools/adb" \
-  --env ADB_SERIAL="emulator-5554" \
+  --env ADB_SERIAL="auto" \
   -- npx -y @fndchagas/expo-android
 ```
 
@@ -56,12 +72,15 @@ args = ["-y", "@fndchagas/expo-android"]
 env = { ADB_PATH = "/Users/you/Library/Android/sdk/platform-tools/adb", ADB_SERIAL = "emulator-5554" }
 ```
 
+Serial selection priority:
+`serial` param (per tool call) → `setDevice` override → `ADB_SERIAL` env → auto (if only one device).
+
 ## Environment variables
 
 | Variable | Default | Description |
 | --- | --- | --- |
 | `ADB_PATH` | `adb` | Path to adb executable |
-| `ADB_SERIAL` | optional | Device serial to target (auto-detects if only one device is connected) |
+| `ADB_SERIAL` | optional | Device serial to target (`auto` to clear and auto-detect) |
 | `ADB_TIMEOUT_MS` | `15000` | Timeout for adb commands |
 | `ADB_MAX_BUFFER_MB` | `10` | Max output buffer size |
 | `ADB_DEBUG` | `0` | Log adb diagnostics to stderr |
@@ -82,6 +101,17 @@ export ANDROID_HOME="$HOME/Library/Android/sdk"
 ```
 
 If multiple devices are connected, set `ADB_SERIAL` to the target device.
+You can also run `setDevice` at runtime:
+
+```ts
+await client.callTool({
+  name: 'expo-android.setDevice',
+  arguments: { serial: 'emulator-5554' },
+});
+```
+
+If you update PATH or SDK variables, restart the MCP process so it can pick up
+the new environment.
 
 ## Tests
 
@@ -96,6 +126,7 @@ Tools are exposed under your MCP server name. Example: `expo-android.tap`.
 
 - `devices` — list connected devices and emulators.
 - `doctor` — validate adb availability and show connected devices.
+- `setDevice` — override the active device serial for this MCP process.
 - `inspect` — UI dump parsed into elements with a summary (screenshot optional).
 - `screenshot` — capture a screenshot only (base64 or file path).
 - `findElement` — return elements that match search criteria.
@@ -139,6 +170,24 @@ Inspect options:
 - `screenshotPath`: optional file path when using `path`
 - `maxElements`: limit elements returned
 - `includeElements`: return elements or summary only
+
+### Doctor
+
+```ts
+await client.callTool({
+  name: 'expo-android.doctor',
+  arguments: {},
+});
+```
+
+### Override serial per call
+
+```ts
+await client.callTool({
+  name: 'expo-android.tapElement',
+  arguments: { text: 'Search', serial: 'emulator-5554' },
+});
+```
 
 ### Tap element
 
