@@ -1,0 +1,56 @@
+name: Expo Go Drift
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve pinned Expo Go URL
+        id: pinned
+        run: |
+          node -e "const fs=require('fs');const text=fs.readFileSync('src/expo/constants.ts','utf8');const m=text.match(/EXPO_GO_ANDROID_URL\s*=\s*\"([^\"]+)\"/);if(!m){throw new Error('EXPO_GO_ANDROID_URL not found');}console.log('url='+m[1]);" >> $GITHUB_OUTPUT
+
+      - name: Resolve latest Expo Go URL
+        id: latest
+        run: |
+          node -e "const https=require('https');const url='https://exp.host/--/api/v2/versions/latest';https.get(url,(res)=>{let data='';res.on('data',chunk=>data+=chunk);res.on('end',()=>{const json=JSON.parse(data);const versions=json?.data?.sdkVersions ?? {};const keys=Object.keys(versions).filter(k=>/^\d+\.\d+\.\d+$/.test(k));if(!keys.length) throw new Error('No sdk versions');const max=keys.sort((a,b)=>{const pa=a.split('.').map(Number);const pb=b.split('.').map(Number);for(let i=0;i<3;i++){if(pa[i]!==pb[i]) return pa[i]-pb[i];}return 0;}).pop();const latestUrl=versions[max]?.androidClientUrl; if(!latestUrl) throw new Error('androidClientUrl missing'); console.log('url='+latestUrl);});}).on('error',err=>{throw err;});" >> $GITHUB_OUTPUT
+
+      - name: Compare URLs
+        id: diff
+        run: |
+          if [ "${{ steps.pinned.outputs.url }}" = "${{ steps.latest.outputs.url }}" ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Prepare issue body
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          cat <<'EOF' > /tmp/expo-go-drift.md
+          The Expo Go Android URL differs from the pinned version in this repo.
+
+          - Pinned: `${{ steps.pinned.outputs.url }}`
+          - Latest: `${{ steps.latest.outputs.url }}`
+
+          Recommended action:
+          1) Review the new release
+          2) Update `EXPO_GO_ANDROID_URL` in `src/expo/constants.ts`
+          EOF
+
+      - name: Create issue
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "Expo Go Android drift detected"
+          content-filepath: /tmp/expo-go-drift.md
