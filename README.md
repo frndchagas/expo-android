@@ -1,5 +1,12 @@
 # expo-android
 
+[![npm version](https://img.shields.io/npm/v/@fndchagas/expo-android.svg)](https://www.npmjs.com/package/@fndchagas/expo-android)
+[![npm downloads](https://img.shields.io/npm/dm/@fndchagas/expo-android.svg)](https://www.npmjs.com/package/@fndchagas/expo-android)
+[![license](https://img.shields.io/npm/l/@fndchagas/expo-android.svg)](LICENSE)
+[![node version](https://img.shields.io/node/v/@fndchagas/expo-android.svg)](package.json)
+[![typescript](https://img.shields.io/badge/TypeScript-5.9.3-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![CI](https://github.com/frndchagas/expo-android/actions/workflows/ci.yml/badge.svg)](https://github.com/frndchagas/expo-android/actions/workflows/ci.yml)
+
 MCP server for Android emulator automation via ADB.
 
 ## Requirements
@@ -59,15 +66,6 @@ env = { ADB_PATH = "/Users/you/Library/Android/sdk/platform-tools/adb", ADB_SERI
 | `ADB_MAX_BUFFER_MB` | `10` | Max output buffer size |
 | `MCP_TRANSPORT` | `stdio` | Transport: `stdio`, `http`, or `both` |
 | `PORT` | `7332` | HTTP port when using http/both |
-
-## Smoke test
-
-This repo includes a basic smoke test wired to the emulator `emulator-5556` by
-default. Override with `ADB_SERIAL` if needed.
-
-```bash
-npm run test
-```
 
 ## Tools
 
