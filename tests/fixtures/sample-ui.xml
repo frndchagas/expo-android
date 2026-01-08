@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<hierarchy rotation="0">
+  <node index="0" text="Hello &amp; World" resource-id="com.app:id/title" class="android.widget.TextView" content-desc="Greeting" checkable="false" checked="false" clickable="true" enabled="true" focused="false" scrollable="false" selected="false" bounds="[10,20][110,220]" />
+  <node index="1" text="Line 1&#10;Line 2" resource-id="com.app:id/body" class="android.widget.TextView" content-desc="Body desc" checkable="false" checked="false" clickable="false" enabled="true" focused="false" scrollable="false" selected="false" bounds="[0,0][0,0]" />
+  <node index="2" text="" resource-id="com.app:id/button" class="android.widget.Button" content-desc="OK" checkable="true" checked="true" clickable="true" enabled="false" focused="false" scrollable="false" selected="true" bounds="[100,200][300,400]" />
+</hierarchy>

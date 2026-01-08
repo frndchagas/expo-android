@@ -67,6 +67,13 @@ env = { ADB_PATH = "/Users/you/Library/Android/sdk/platform-tools/adb", ADB_SERI
 | `MCP_TRANSPORT` | `stdio` | Transport: `stdio`, `http`, or `both` |
 | `PORT` | `7332` | HTTP port when using http/both |
 
+## Tests
+
+```bash
+npm run build
+npm test
+```
+
 ## Tools
 
 Tools are exposed under your MCP server name. Example: `expo-android.tap`.
