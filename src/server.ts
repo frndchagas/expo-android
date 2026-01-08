@@ -5,6 +5,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express, { type Request, type Response } from 'express';
 import { MCP_HTTP_PORT, MCP_TRANSPORT } from './config.js';
+import { assertAdbAvailable, resolveAdbSerial } from './adb.js';
 import { registerAndroidTools } from './tools/android.js';
 
 const require = createRequire(import.meta.url);
@@ -16,6 +17,21 @@ const server = new McpServer({
 });
 
 registerAndroidTools(server);
+
+async function warmUpAdb() {
+  try {
+    await assertAdbAvailable();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+
+  try {
+    await resolveAdbSerial({ strict: false });
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+  }
+}
 
 async function startStdio() {
   const transport = new StdioServerTransport();
@@ -42,10 +58,13 @@ async function startHttp() {
 }
 
 if (MCP_TRANSPORT === 'stdio') {
+  await warmUpAdb();
   await startStdio();
 } else if (MCP_TRANSPORT === 'http') {
+  await warmUpAdb();
   await startHttp();
 } else if (MCP_TRANSPORT === 'both') {
+  await warmUpAdb();
   await Promise.all([startStdio(), startHttp()]);
 } else {
   throw new Error(`Unknown MCP_TRANSPORT: ${MCP_TRANSPORT}`);

@@ -12,7 +12,7 @@ MCP server for Android emulator automation via ADB.
 ## Requirements
 
 - Node 18+
-- Android SDK platform-tools (adb) on PATH
+- Android SDK platform-tools (adb) available
 - Android emulator or device connected
 
 Verify adb:
@@ -61,11 +61,27 @@ env = { ADB_PATH = "/Users/you/Library/Android/sdk/platform-tools/adb", ADB_SERI
 | Variable | Default | Description |
 | --- | --- | --- |
 | `ADB_PATH` | `adb` | Path to adb executable |
-| `ADB_SERIAL` | optional | Device serial to target |
+| `ADB_SERIAL` | optional | Device serial to target (auto-detects if only one device is connected) |
 | `ADB_TIMEOUT_MS` | `15000` | Timeout for adb commands |
 | `ADB_MAX_BUFFER_MB` | `10` | Max output buffer size |
+| `ADB_DEBUG` | `0` | Log adb diagnostics to stderr |
 | `MCP_TRANSPORT` | `stdio` | Transport: `stdio`, `http`, or `both` |
 | `PORT` | `7332` | HTTP port when using http/both |
+
+## Troubleshooting
+
+### adb not found (spawn adb ENOENT)
+
+If you see an error like `ADB executable not found` or `spawn adb ENOENT`, set `ADB_PATH`
+or export an SDK path:
+
+```bash
+export ADB_PATH="$HOME/Library/Android/sdk/platform-tools/adb"
+# or
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+```
+
+If multiple devices are connected, set `ADB_SERIAL` to the target device.
 
 ## Tests
 
@@ -79,7 +95,9 @@ npm test
 Tools are exposed under your MCP server name. Example: `expo-android.tap`.
 
 - `devices` — list connected devices and emulators.
-- `inspect` — screenshot + UI dump parsed into elements with a summary.
+- `doctor` — validate adb availability and show connected devices.
+- `inspect` — UI dump parsed into elements with a summary (screenshot optional).
+- `screenshot` — capture a screenshot only (base64 or file path).
 - `findElement` — return elements that match search criteria.
 - `tapElement` — find an element and tap its center.
 - `waitForElement` — wait until an element appears (optionally with state checks).
@@ -111,9 +129,16 @@ Common fields:
 ```ts
 const result = await client.callTool({
   name: 'expo-android.inspect',
-  arguments: { onlyInteractive: true, includeScreenshot: true },
+  arguments: { onlyInteractive: true, includeScreenshot: false, maxElements: 200 },
 });
 ```
+
+Inspect options:
+- `includeScreenshot` (default: `false`)
+- `screenshotMode`: `base64` or `path`
+- `screenshotPath`: optional file path when using `path`
+- `maxElements`: limit elements returned
+- `includeElements`: return elements or summary only
 
 ### Tap element
 

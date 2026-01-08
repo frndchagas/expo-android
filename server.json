@@ -21,7 +21,7 @@
         },
         {
           "name": "ADB_SERIAL",
-          "description": "Device serial to target (optional)."
+          "description": "Device serial to target (optional, auto-detects if only one device is connected)."
         },
         {
           "name": "ADB_TIMEOUT_MS",
@@ -32,6 +32,11 @@
           "name": "ADB_MAX_BUFFER_MB",
           "description": "Max buffer size for adb output in MB.",
           "default": "10"
+        },
+        {
+          "name": "ADB_DEBUG",
+          "description": "Enable adb debug logs (set to 1).",
+          "default": "0"
         },
         {
           "name": "MCP_TRANSPORT",

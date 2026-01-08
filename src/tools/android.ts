@@ -1,6 +1,18 @@
+import { randomUUID } from 'node:crypto';
+import { writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { adbExec, adbExecOut, adbShell } from '../adb.js';
+import {
+  adbExec,
+  adbExecOut,
+  adbListDevices,
+  adbShell,
+  getAdbVersion,
+  resolveAdbSerial,
+} from '../adb.js';
+import { ADB_PATH, ADB_PATH_SOURCE } from '../config.js';
 import {
   findElements,
   generateSummary,
@@ -38,15 +50,65 @@ function escapeInputText(text: string) {
 
 type SearchCriteria = FindCriteria;
 
-async function fetchUiXml() {
-  await adbShell('uiautomator dump /sdcard/ui.xml');
-  const { stdout } = await adbExecOut(['cat', '/sdcard/ui.xml']);
-  return toText(stdout);
+async function fetchUiXml({
+  attempts = 2,
+  delayMs = 300,
+}: {
+  attempts?: number;
+  delayMs?: number;
+} = {}) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      await adbShell('uiautomator dump /sdcard/ui.xml');
+      const { stdout } = await adbExecOut(['cat', '/sdcard/ui.xml']);
+      return toText(stdout);
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  throw lastError;
 }
 
 async function fetchUiElements() {
   const xml = await fetchUiXml();
   return parseUIElements(xml);
+}
+
+async function captureScreenshotBuffer() {
+  const { stdout } = await adbExecOut(['screencap', '-p']);
+  return Buffer.isBuffer(stdout) ? stdout : Buffer.from(stdout);
+}
+
+async function saveScreenshotToFile(buffer: Buffer, filePath?: string) {
+  const targetPath =
+    filePath ??
+    join(tmpdir(), `expo-android-${Date.now()}-${randomUUID()}.png`);
+  await writeFile(targetPath, buffer);
+  return targetPath;
+}
+
+async function captureScreenshot({
+  mode,
+  path,
+}: {
+  mode: 'base64' | 'path';
+  path?: string;
+}) {
+  const buffer = await captureScreenshotBuffer();
+  if (mode === 'path') {
+    const savedPath = await saveScreenshotToFile(buffer, path);
+    return { mode, path: savedPath, base64: null, mimeType: 'image/png' };
+  }
+  return {
+    mode,
+    path: null,
+    base64: buffer.toString('base64'),
+    mimeType: 'image/png',
+  };
 }
 
 function isInteractive(element: UIElement) {
@@ -110,16 +172,53 @@ export function registerAndroidTools(server: McpServer) {
       inputSchema: emptySchema,
     },
     async () => {
-      const { stdout } = await adbExec(['devices', '-l']);
-      const lines = toText(stdout)
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean);
-      const items = lines.slice(1).map((line) => {
-        const [serial, state, ...rest] = line.split(/\s+/);
-        return { serial, state, details: rest.join(' ') };
-      });
+      const items = await adbListDevices();
       return list('Devices fetched.', items);
+    }
+  );
+
+  server.registerTool(
+    'doctor',
+    {
+      title: 'Doctor',
+      description: 'Check adb availability and connected devices.',
+      inputSchema: emptySchema,
+    },
+    async () => {
+      let adbVersion: string | null = null;
+      let adbVersionError: string | null = null;
+      let devicesError: string | null = null;
+      let devices: Array<Record<string, unknown>> = [];
+      let selectedSerial: string | null = null;
+
+      try {
+        adbVersion = await getAdbVersion();
+      } catch (error) {
+        adbVersionError = error instanceof Error ? error.message : String(error);
+      }
+
+      try {
+        devices = await adbListDevices();
+      } catch (error) {
+        devicesError = error instanceof Error ? error.message : String(error);
+      }
+
+      try {
+        selectedSerial = await resolveAdbSerial({ strict: false });
+      } catch (error) {
+        // ignore: this is informational only
+        selectedSerial = null;
+      }
+
+      return ok('Doctor check complete.', {
+        adbPath: ADB_PATH,
+        adbPathSource: ADB_PATH_SOURCE,
+        adbVersion,
+        adbVersionError,
+        devices,
+        devicesError,
+        selectedSerial,
+      });
     }
   );
 
@@ -133,19 +232,29 @@ export function registerAndroidTools(server: McpServer) {
         onlyInteractive: z.boolean().optional(),
         includeScreenshot: z.boolean().optional(),
         includeElements: z.boolean().optional(),
+        screenshotMode: z.enum(['base64', 'path']).optional(),
+        screenshotPath: z.string().optional(),
+        maxElements: z.number().int().positive().optional(),
       }),
     },
     async ({
       onlyInteractive,
       includeScreenshot,
       includeElements,
+      screenshotMode,
+      screenshotPath,
+      maxElements,
     }: {
       onlyInteractive?: boolean;
       includeScreenshot?: boolean;
       includeElements?: boolean;
+      screenshotMode?: 'base64' | 'path';
+      screenshotPath?: string;
+      maxElements?: number;
     }) => {
-      const shouldIncludeScreenshot = includeScreenshot ?? true;
+      const shouldIncludeScreenshot = includeScreenshot ?? false;
       const shouldIncludeElements = includeElements ?? true;
+      const mode = screenshotMode ?? 'base64';
       const elements = await fetchUiElementsWithRetry({
         onlyInteractive,
         attempts: 3,
@@ -155,31 +264,92 @@ export function registerAndroidTools(server: McpServer) {
         ? elements.filter(isInteractive)
         : elements;
       const summary = generateSummary(filtered);
+      const limited =
+        maxElements && maxElements > 0 ? filtered.slice(0, maxElements) : filtered;
       let screenshotBase64: string | null = null;
+      let screenshotFilePath: string | null = null;
       const content: Array<
         | { type: 'text'; text: string }
         | { type: 'image'; data: string; mimeType: string }
       > = [{ type: 'text', text: summary }];
 
       if (shouldIncludeScreenshot) {
-        const { stdout } = await adbExecOut(['screencap', '-p']);
-        const screenshot = Buffer.isBuffer(stdout)
-          ? stdout
-          : Buffer.from(stdout);
-        screenshotBase64 = screenshot.toString('base64');
-        content.push({
-          type: 'image',
-          data: screenshotBase64,
-          mimeType: 'image/png',
+        const screenshot = await captureScreenshot({
+          mode,
+          path: screenshotPath,
         });
+        screenshotBase64 = screenshot.base64;
+        screenshotFilePath = screenshot.path;
+        if (screenshot.base64) {
+          content.push({
+            type: 'image',
+            data: screenshot.base64,
+            mimeType: screenshot.mimeType,
+          });
+        } else if (screenshot.path) {
+          content.push({
+            type: 'text',
+            text: `Screenshot saved to ${screenshot.path}.`,
+          });
+        }
       }
 
       return {
         content,
         structuredContent: toRecord({
           screenshot: screenshotBase64,
-          elements: shouldIncludeElements ? filtered : [],
+          screenshotPath: screenshotFilePath,
+          screenshotMode: shouldIncludeScreenshot ? mode : null,
+          elements: shouldIncludeElements ? limited : [],
+          elementsTotal: filtered.length,
+          elementsReturned: shouldIncludeElements ? limited.length : 0,
           summary,
+        }),
+      };
+    }
+  );
+
+  server.registerTool(
+    'screenshot',
+    {
+      title: 'Screenshot',
+      description: 'Capture a screenshot without UI element parsing.',
+      inputSchema: z.object({
+        mode: z.enum(['base64', 'path']).optional(),
+        path: z.string().optional(),
+      }),
+    },
+    async ({ mode, path }: { mode?: 'base64' | 'path'; path?: string }) => {
+      const resolvedMode = mode ?? 'base64';
+      const screenshot = await captureScreenshot({
+        mode: resolvedMode,
+        path,
+      });
+
+      const content: Array<
+        | { type: 'text'; text: string }
+        | { type: 'image'; data: string; mimeType: string }
+      > = [{ type: 'text', text: 'Screenshot captured.' }];
+
+      if (screenshot.base64) {
+        content.push({
+          type: 'image',
+          data: screenshot.base64,
+          mimeType: screenshot.mimeType,
+        });
+      } else if (screenshot.path) {
+        content.push({
+          type: 'text',
+          text: `Screenshot saved to ${screenshot.path}.`,
+        });
+      }
+
+      return {
+        content,
+        structuredContent: toRecord({
+          screenshot: screenshot.base64,
+          screenshotPath: screenshot.path,
+          screenshotMode: resolvedMode,
         }),
       };
     }
