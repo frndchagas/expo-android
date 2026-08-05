@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/frndchagas/expo-android/compare/expo-android-v0.2.1...expo-android-v0.2.2) (2026-08-05)
+
+
+### Bug Fixes
+
+* update pinned Expo Go to 57.0.3 and dedupe drift issues ([e232994](https://github.com/frndchagas/expo-android/commit/e232994682367ec54bc248afaddaa0e96aafb7a6))
+* update pinned Expo Go to 57.0.3 and dedupe drift issues ([3d26811](https://github.com/frndchagas/expo-android/commit/3d26811b2f48d2be942586b6d45471f36dfe65a2))
+
 ## [0.2.1](https://github.com/frndchagas/expo-android/compare/expo-android-v0.2.0...expo-android-v0.2.1) (2026-01-08)
 
 
