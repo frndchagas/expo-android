@@ -27,8 +27,11 @@ jobs:
 
       - name: Compare URLs
         id: diff
+        env:
+          PINNED_URL: ${{ steps.pinned.outputs.url }}
+          LATEST_URL: ${{ steps.latest.outputs.url }}
         run: |
-          if [ "${{ steps.pinned.outputs.url }}" = "${{ steps.latest.outputs.url }}" ]; then
+          if [ "$PINNED_URL" = "$LATEST_URL" ]; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
