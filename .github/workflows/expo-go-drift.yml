@@ -36,21 +36,31 @@ jobs:
 
       - name: Prepare issue body
         if: steps.diff.outputs.changed == 'true'
+        env:
+          PINNED_URL: ${{ steps.pinned.outputs.url }}
+          LATEST_URL: ${{ steps.latest.outputs.url }}
         run: |
-          cat <<'EOF' > /tmp/expo-go-drift.md
+          cat <<EOF > /tmp/expo-go-drift.md
           The Expo Go Android URL differs from the pinned version in this repo.
 
-          - Pinned: `${{ steps.pinned.outputs.url }}`
-          - Latest: `${{ steps.latest.outputs.url }}`
+          - Pinned: \`${PINNED_URL}\`
+          - Latest: \`${LATEST_URL}\`
 
           Recommended action:
           1) Review the new release
-          2) Update `EXPO_GO_ANDROID_URL` in `src/expo/constants.ts`
+          2) Update \`EXPO_GO_ANDROID_URL\` in \`src/expo/constants.ts\`
           EOF
 
-      - name: Create issue
+      - name: Create or update issue
         if: steps.diff.outputs.changed == 'true'
-        uses: peter-evans/create-issue-from-file@v5
-        with:
-          title: "Expo Go Android drift detected"
-          content-filepath: /tmp/expo-go-drift.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Expo Go Android drift detected"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body-file /tmp/expo-go-drift.md
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file /tmp/expo-go-drift.md
+          fi
