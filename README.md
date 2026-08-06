@@ -23,6 +23,10 @@ adb devices
 
 ## Install
 
+**Claude Desktop, one-click:** download [`expo-android.mcpb`](https://github.com/frndchagas/expo-android/releases/latest/download/expo-android.mcpb) from the latest release and drag it into **Settings → Extensions**. You can leave both fields empty — adb is auto-detected and the only connected device is used by default.
+
+**Via npm:**
+
 ```bash
 npm install -g @fndchagas/expo-android
 # or

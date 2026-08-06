@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "test": "node --test",
     "prepublishOnly": "npm run build",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:coverage": "node --test --experimental-test-coverage"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.25.1",
