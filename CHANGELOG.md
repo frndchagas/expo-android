@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/frndchagas/expo-android/compare/expo-android-v0.4.0...expo-android-v0.5.0) (2026-08-06)
+
+
+### Features
+
+* ship an MCPB bundle and report coverage in CI ([7db8dd7](https://github.com/frndchagas/expo-android/commit/7db8dd73d3f61f9552138afbca7c3b70bdfa036a))
+* ship an MCPB bundle and report coverage in CI ([0d71a8b](https://github.com/frndchagas/expo-android/commit/0d71a8bcc9bb3534fa6984b49cfcc352ae110b81))
+
 ## [0.4.0](https://github.com/frndchagas/expo-android/compare/expo-android-v0.3.1...expo-android-v0.4.0) (2026-08-06)
 
 
