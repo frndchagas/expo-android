@@ -122,7 +122,7 @@ npm test
 
 ## Tools
 
-Tools are exposed under your MCP server name. Example: `expo-android.tap`.
+Tool names are plain identifiers (e.g. `tap`); your MCP client prefixes them with the server name you registered.
 
 - `devices` — list connected devices and emulators.
 - `doctor` — validate adb availability and show connected devices.
@@ -140,6 +140,7 @@ Tools are exposed under your MCP server name. Example: `expo-android.tap`.
 - `keyEvent` — send Android key events (e.g., BACK, HOME).
 - `openApp` — launch an app by package name.
 - `listPackages` — list installed package names.
+- `installExpoGo` — download the pinned Expo Go APK and install it via `adb install -r` (pass `url` to install a different release).
 
 ## Search criteria
 

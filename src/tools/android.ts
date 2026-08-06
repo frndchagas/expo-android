@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -15,6 +15,7 @@ import {
   setAdbSerialOverride,
 } from '../adb.js';
 import { ADB_PATH, ADB_PATH_SOURCE } from '../config.js';
+import { EXPO_GO_ANDROID_URL } from '../expo/constants.js';
 import {
   findElements,
   generateSummary,
@@ -1004,6 +1005,55 @@ export function registerAndroidTools(server: McpServer) {
         ? packages.filter((name) => name.includes(filter))
         : packages;
       return list('Packages fetched.', items);
+    }
+  );
+
+  server.registerTool(
+    'installExpoGo',
+    {
+      title: 'Install Expo Go',
+      description:
+        'Download the pinned Expo Go APK and install it on the device via adb install -r. Pass url to install a different release.',
+      inputSchema: withSerial(
+        z.object({
+          url: z
+            .string()
+            .url()
+            .optional()
+            .describe('APK URL override (defaults to the pinned Expo Go release)'),
+        })
+      ),
+    },
+    async ({ url, serial }: { url?: string; serial?: string }) => {
+      const apkUrl = url ?? EXPO_GO_ANDROID_URL;
+      const response = await fetch(apkUrl);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to download Expo Go APK (HTTP ${response.status}) from ${apkUrl}`
+        );
+      }
+      const apkBytes = Buffer.from(await response.arrayBuffer());
+      const apkPath = join(tmpdir(), `expo-go-${randomUUID()}.apk`);
+      await writeFile(apkPath, apkBytes);
+      try {
+        const { stdout } = await adbExec(['install', '-r', apkPath], {
+          serial: normalizeSerial(serial),
+          // large APK: adb install can far exceed the default command timeout
+          timeout: 300_000,
+        });
+        const output = toText(stdout).trim();
+        if (!/Success/i.test(output)) {
+          throw new Error(`adb install did not report success: ${output}`);
+        }
+        const sizeMb = (apkBytes.length / 1048576).toFixed(1);
+        return ok(`Expo Go installed (${sizeMb} MB APK).`, {
+          url: apkUrl,
+          sizeBytes: apkBytes.length,
+          output,
+        });
+      } finally {
+        await rm(apkPath, { force: true });
+      }
     }
   );
 }
