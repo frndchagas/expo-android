@@ -142,6 +142,8 @@ Tool names are plain identifiers (e.g. `tap`); your MCP client prefixes them wit
 - `listPackages` — list installed package names.
 - `installExpoGo` — download the pinned Expo Go APK and install it via `adb install -r` (the `url` override only accepts official `github.com/expo/expo-go-releases` URLs).
 
+Every tool declares MCP annotations (`readOnlyHint`/`destructiveHint`), so clients can auto-approve inspection tools and gate the ones that drive the device.
+
 ## Search criteria
 
 These tools accept flexible search inputs: `findElement`, `tapElement`,

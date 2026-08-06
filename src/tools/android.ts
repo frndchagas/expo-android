@@ -11,7 +11,6 @@ import {
   adbShell,
   getAdbSerialState,
   getAdbVersion,
-  resolveAdbSerial,
   setAdbSerialOverride,
 } from '../adb.js';
 import { ADB_PATH, ADB_PATH_SOURCE } from '../config.js';
@@ -199,6 +198,7 @@ export function registerAndroidTools(server: McpServer) {
     'devices',
     {
       title: 'List devices',
+      annotations: { readOnlyHint: true, openWorldHint: true },
       description: 'List connected Android devices and emulators.',
       inputSchema: emptySchema,
     },
@@ -212,6 +212,7 @@ export function registerAndroidTools(server: McpServer) {
     'doctor',
     {
       title: 'Doctor',
+      annotations: { readOnlyHint: true, openWorldHint: true },
       description: 'Check adb availability and connected devices.',
       inputSchema: emptySchema,
     },
@@ -273,6 +274,7 @@ export function registerAndroidTools(server: McpServer) {
     'setDevice',
     {
       title: 'Set device',
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
       description:
         'Override the active device serial for this MCP process. Use "auto" to clear override.',
       inputSchema: z.object({
@@ -297,6 +299,7 @@ export function registerAndroidTools(server: McpServer) {
     'inspect',
     {
       title: 'Inspect',
+      annotations: { readOnlyHint: true, openWorldHint: true },
       description:
         'Capture a screenshot and parse UI hierarchy into structured elements.',
       inputSchema: withSerial(
@@ -390,6 +393,7 @@ export function registerAndroidTools(server: McpServer) {
     'screenshot',
     {
       title: 'Screenshot',
+      annotations: { readOnlyHint: true, openWorldHint: true },
       description: 'Capture a screenshot without UI element parsing.',
       inputSchema: withSerial(
         z.object({
@@ -447,6 +451,7 @@ export function registerAndroidTools(server: McpServer) {
     'findElement',
     {
       title: 'Find element',
+      annotations: { readOnlyHint: true, openWorldHint: true },
       description: 'Find UI elements by criteria.',
       inputSchema: withSerial(
         z.object({
@@ -479,6 +484,7 @@ export function registerAndroidTools(server: McpServer) {
     'tapElement',
     {
       title: 'Tap element',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
       description: 'Find an element and tap its center coordinate.',
       inputSchema: withSerial(
         z.object({
@@ -581,6 +587,7 @@ export function registerAndroidTools(server: McpServer) {
     'waitForElement',
     {
       title: 'Wait for element',
+      annotations: { readOnlyHint: true, openWorldHint: true },
       description: 'Wait until an element appears or timeout is reached.',
       inputSchema: withSerial(
         z.object({
@@ -699,6 +706,7 @@ export function registerAndroidTools(server: McpServer) {
     'assertElement',
     {
       title: 'Assert element',
+      annotations: { readOnlyHint: true, openWorldHint: true },
       description: 'Assert element presence and state.',
       inputSchema: withSerial(
         z.object({
@@ -829,6 +837,7 @@ export function registerAndroidTools(server: McpServer) {
     'tap',
     {
       title: 'Tap',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
       description: 'Tap on screen at coordinates.',
       inputSchema: withSerial(
         z.object({
@@ -849,6 +858,7 @@ export function registerAndroidTools(server: McpServer) {
     'swipe',
     {
       title: 'Swipe',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
       description: 'Swipe on screen from one coordinate to another.',
       inputSchema: withSerial(
         z.object({
@@ -888,6 +898,7 @@ export function registerAndroidTools(server: McpServer) {
     'longPress',
     {
       title: 'Long press',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
       description: 'Press and hold on screen at coordinates.',
       inputSchema: withSerial(
         z.object({
@@ -920,6 +931,7 @@ export function registerAndroidTools(server: McpServer) {
     'inputText',
     {
       title: 'Input text',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
       description: 'Type text into the focused input field.',
       inputSchema: withSerial(
         z.object({
@@ -940,6 +952,7 @@ export function registerAndroidTools(server: McpServer) {
     'keyEvent',
     {
       title: 'Key event',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
       description: 'Send an Android key event to the device.',
       inputSchema: withSerial(
         z.object({
@@ -959,6 +972,7 @@ export function registerAndroidTools(server: McpServer) {
     'openApp',
     {
       title: 'Open app',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
       description: 'Launch an Android app by package name.',
       inputSchema: withSerial(
         z.object({
@@ -985,6 +999,7 @@ export function registerAndroidTools(server: McpServer) {
     'listPackages',
     {
       title: 'List packages',
+      annotations: { readOnlyHint: true, openWorldHint: true },
       description: 'List installed package names.',
       inputSchema: withSerial(
         z.object({
@@ -1012,6 +1027,7 @@ export function registerAndroidTools(server: McpServer) {
     'installExpoGo',
     {
       title: 'Install Expo Go',
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
       description:
         'Download the pinned Expo Go APK and install it on the device via adb install -r. Pass url to install a different official Expo Go release (only github.com/expo/expo-go-releases URLs are accepted).',
       inputSchema: withSerial(
