@@ -1013,19 +1013,34 @@ export function registerAndroidTools(server: McpServer) {
     {
       title: 'Install Expo Go',
       description:
-        'Download the pinned Expo Go APK and install it on the device via adb install -r. Pass url to install a different release.',
+        'Download the pinned Expo Go APK and install it on the device via adb install -r. Pass url to install a different official Expo Go release (only github.com/expo/expo-go-releases URLs are accepted).',
       inputSchema: withSerial(
         z.object({
           url: z
             .string()
             .url()
             .optional()
-            .describe('APK URL override (defaults to the pinned Expo Go release)'),
+            .describe(
+              'Official Expo Go release APK URL override (must be under github.com/expo/expo-go-releases/releases/download/)'
+            ),
         })
       ),
     },
     async ({ url, serial }: { url?: string; serial?: string }) => {
       const apkUrl = url ?? EXPO_GO_ANDROID_URL;
+      // Only official Expo Go releases: an unrestricted URL would let a
+      // misled model install arbitrary code on the device, and the fetch
+      // below would double as an SSRF primitive. new URL() normalizes dot
+      // segments before the check.
+      const parsedUrl = new URL(apkUrl);
+      if (
+        parsedUrl.origin !== 'https://github.com' ||
+        !parsedUrl.pathname.startsWith('/expo/expo-go-releases/releases/download/')
+      ) {
+        throw new Error(
+          'installExpoGo: url must point to an official Expo Go release under https://github.com/expo/expo-go-releases/releases/download/'
+        );
+      }
       const response = await fetch(apkUrl);
       if (!response.ok) {
         throw new Error(
