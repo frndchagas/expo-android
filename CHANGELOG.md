@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/frndchagas/expo-android/compare/expo-android-v0.2.2...expo-android-v0.3.0) (2026-08-06)
+
+
+### Features
+
+* add installExpoGo tool ([eef64e8](https://github.com/frndchagas/expo-android/commit/eef64e8991109a6f54a39c0331bc9159d9308c11))
+* add installExpoGo tool ([cf19d98](https://github.com/frndchagas/expo-android/commit/cf19d98e3cdcad613f90261c6fd01b3db90f9cb6))
+
 ## [0.2.2](https://github.com/frndchagas/expo-android/compare/expo-android-v0.2.1...expo-android-v0.2.2) (2026-08-05)
 
 
