@@ -237,7 +237,7 @@ export async function assertAdbAvailable() {
   try {
     await adbExecRaw(['version'], { serial: null });
   } catch (error) {
-    throw new Error(formatAdbNotFoundMessage(error));
+    throw new Error(formatAdbNotFoundMessage(error), { cause: error });
   }
 }
 
