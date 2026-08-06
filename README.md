@@ -140,7 +140,7 @@ Tool names are plain identifiers (e.g. `tap`); your MCP client prefixes them wit
 - `keyEvent` — send Android key events (e.g., BACK, HOME).
 - `openApp` — launch an app by package name.
 - `listPackages` — list installed package names.
-- `installExpoGo` — download the pinned Expo Go APK and install it via `adb install -r` (pass `url` to install a different release).
+- `installExpoGo` — download the pinned Expo Go APK and install it via `adb install -r` (the `url` override only accepts official `github.com/expo/expo-go-releases` URLs).
 
 ## Search criteria
 
