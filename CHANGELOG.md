@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/frndchagas/expo-android/compare/expo-android-v0.3.0...expo-android-v0.3.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* restrict installExpoGo to official Expo Go release URLs ([f301d97](https://github.com/frndchagas/expo-android/commit/f301d977807d3e358f1008d172c96986c78a35ce))
+* restrict installExpoGo to official Expo Go release URLs ([9807f13](https://github.com/frndchagas/expo-android/commit/9807f13b9e841509ecc719cba2dec025643e78ae))
+
 ## [0.3.0](https://github.com/frndchagas/expo-android/compare/expo-android-v0.2.2...expo-android-v0.3.0) (2026-08-06)
 
 
