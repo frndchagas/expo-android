@@ -26,3 +26,6 @@ jobs:
         run: npm run build
       - name: Test
         run: npm test
+      - name: Coverage
+        if: matrix.node == 22
+        run: npm run test:coverage

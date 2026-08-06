@@ -1,0 +1,44 @@
+{
+  "manifest_version": "0.2",
+  "name": "expo-android",
+  "display_name": "Expo Android",
+  "version": "0.0.0",
+  "description": "Drive an Android emulator or device over ADB: inspect the UI, tap elements by text, assert state, and install Expo Go.",
+  "author": {
+    "name": "Fernando Chagas",
+    "url": "https://github.com/frndchagas"
+  },
+  "homepage": "https://github.com/frndchagas/expo-android",
+  "license": "MIT",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/server.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/server.js"],
+      "env": {
+        "ADB_PATH": "${user_config.adb_path}",
+        "ADB_SERIAL": "${user_config.adb_serial}"
+      }
+    }
+  },
+  "user_config": {
+    "adb_path": {
+      "type": "string",
+      "title": "ADB path",
+      "description": "Path to the adb binary. Leave empty to auto-detect from PATH, ANDROID_HOME, or ANDROID_SDK_ROOT.",
+      "required": false
+    },
+    "adb_serial": {
+      "type": "string",
+      "title": "Device serial",
+      "description": "Device or emulator serial to target. Leave empty to use the only connected device.",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "runtimes": {
+      "node": ">=18"
+    }
+  }
+}
