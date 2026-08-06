@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/frndchagas/expo-android/compare/expo-android-v0.3.1...expo-android-v0.4.0) (2026-08-06)
+
+
+### Features
+
+* declare MCP annotations, add lint, and register the maintainer ([2ae419a](https://github.com/frndchagas/expo-android/commit/2ae419a94f7d24fa734dc4dc727743c0e71c8c55))
+* declare MCP annotations, add lint, and register the maintainer ([4e078e0](https://github.com/frndchagas/expo-android/commit/4e078e0a57758911e66215acf00cb7f833a4139f))
+
 ## [0.3.1](https://github.com/frndchagas/expo-android/compare/expo-android-v0.3.0...expo-android-v0.3.1) (2026-08-06)
 
 
