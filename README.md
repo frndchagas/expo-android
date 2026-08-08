@@ -95,7 +95,8 @@ Serial selection priority:
 
 ### adb not found (spawn adb ENOENT)
 
-If you see an error like `ADB executable not found` or `spawn adb ENOENT`, set `ADB_PATH`
+The server starts even when adb is missing — tools return the `ADB executable not found`
+error until adb becomes reachable (run `doctor` to diagnose). To fix it, set `ADB_PATH`
 or export an SDK path:
 
 ```bash
