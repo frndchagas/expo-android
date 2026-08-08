@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/frndchagas/expo-android/compare/expo-android-v0.5.0...expo-android-v0.5.1) (2026-08-08)
+
+
+### Bug Fixes
+
+* start the server without adb and report it per tool call ([#27](https://github.com/frndchagas/expo-android/issues/27)) ([e85c022](https://github.com/frndchagas/expo-android/commit/e85c02225b2ea94003f94390bf75db052844ab29))
+
 ## [0.5.0](https://github.com/frndchagas/expo-android/compare/expo-android-v0.4.0...expo-android-v0.5.0) (2026-08-06)
 
 
