@@ -83,11 +83,18 @@ async function assertSerialAvailable(serial: string) {
 
 async function adbExecRaw(args: string[], options: ExecOptions = {}) {
   const { serial: _serial, ...execOptions } = options;
-  return execFileAsync(ADB_PATH, args, {
-    timeout: ADB_TIMEOUT_MS,
-    maxBuffer: ADB_MAX_BUFFER,
-    ...execOptions,
-  });
+  try {
+    return await execFileAsync(ADB_PATH, args, {
+      timeout: ADB_TIMEOUT_MS,
+      maxBuffer: ADB_MAX_BUFFER,
+      ...execOptions,
+    });
+  } catch (error) {
+    if (isAdbSpawnError(error)) {
+      throw new Error(formatAdbNotFoundMessage(error), { cause: error });
+    }
+    throw error;
+  }
 }
 
 export async function adbExec(args: string[], options: ExecOptions = {}) {
@@ -215,6 +222,17 @@ export async function getAdbVersion() {
   return toText(stdout).trim();
 }
 
+const ADB_SPAWN_ERROR_CODES = new Set(['ENOENT', 'EACCES', 'ENOTDIR']);
+
+function isAdbSpawnError(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    ADB_SPAWN_ERROR_CODES.has(String((error as { code?: unknown }).code))
+  );
+}
+
 function formatAdbNotFoundMessage(error: unknown) {
   const errorCode =
     typeof error === 'object' && error !== null && 'code' in error
@@ -234,11 +252,7 @@ function formatAdbNotFoundMessage(error: unknown) {
 }
 
 export async function assertAdbAvailable() {
-  try {
-    await adbExecRaw(['version'], { serial: null });
-  } catch (error) {
-    throw new Error(formatAdbNotFoundMessage(error), { cause: error });
-  }
+  await adbExecRaw(['version'], { serial: null });
 }
 
 export async function getAdbSerialState({ strict = false } = {}) {

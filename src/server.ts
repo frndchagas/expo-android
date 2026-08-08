@@ -18,12 +18,18 @@ const server = new McpServer({
 
 registerAndroidTools(server);
 
+// The server must start even without adb (MCP directories run it in bare
+// containers to validate the handshake), so a missing adb is reported per
+// tool call instead of aborting here.
 async function warmUpAdb() {
   try {
     await assertAdbAvailable();
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
+    console.error(
+      '[expo-android] adb is unavailable; starting anyway. Tools will report this error until adb is reachable (run doctor to diagnose).'
+    );
+    return;
   }
 
   try {
