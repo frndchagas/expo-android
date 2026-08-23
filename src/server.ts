@@ -11,12 +11,15 @@ import { registerAndroidTools } from './tools/android.js';
 const require = createRequire(import.meta.url);
 const { version: MCP_VERSION } = require('../package.json') as { version: string };
 
-const server = new McpServer({
-  name: 'expo-android',
-  version: MCP_VERSION,
-});
+function createMcpServer() {
+  const server = new McpServer({
+    name: 'expo-android',
+    version: MCP_VERSION,
+  });
 
-registerAndroidTools(server);
+  registerAndroidTools(server);
+  return server;
+}
 
 // The server must start even without adb (MCP directories run it in bare
 // containers to validate the handshake), so a missing adb is reported per
@@ -40,6 +43,7 @@ async function warmUpAdb() {
 }
 
 async function startStdio() {
+  const server = createMcpServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
@@ -49,17 +53,21 @@ async function startHttp() {
   app.use(express.json());
 
   app.post('/mcp', async (req: Request, res: Response) => {
+    const server = createMcpServer();
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
     });
-    res.on('close', () => transport.close());
+    res.on('close', () => {
+      void server.close();
+    });
     await server.connect(transport);
     await transport.handleRequest(req, res, req.body);
   });
 
   app.listen(MCP_HTTP_PORT, () => {
-    console.log(`MCP HTTP server listening on :${MCP_HTTP_PORT}/mcp`);
+    // stdout belongs to the MCP stdio transport when running in `both` mode.
+    console.error(`MCP HTTP server listening on :${MCP_HTTP_PORT}/mcp`);
   });
 }
 
