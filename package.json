@@ -1,6 +1,6 @@
 {
   "name": "@fndchagas/expo-android",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "mcpName": "io.github.frndchagas/expo-android",
   "type": "module",
   "scripts": {

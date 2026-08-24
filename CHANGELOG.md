@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/frndchagas/expo-android/compare/expo-android-v0.5.1...expo-android-v0.5.2) (2026-08-24)
+
+
+### Bug Fixes
+
+* update MCP SDK and isolate transports ([#29](https://github.com/frndchagas/expo-android/issues/29)) ([614141a](https://github.com/frndchagas/expo-android/commit/614141af1ee7e884999b87fa8d95be7b5ef02b0c))
+
 ## [0.5.1](https://github.com/frndchagas/expo-android/compare/expo-android-v0.5.0...expo-android-v0.5.1) (2026-08-08)
 
 
