@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/frndchagas/expo-android/compare/expo-android-v0.5.2...expo-android-v0.5.3) (2026-09-08)
+
+
+### Bug Fixes
+
+* update pinned Expo Go to 57.0.9 ([#33](https://github.com/frndchagas/expo-android/issues/33)) ([11bf4d0](https://github.com/frndchagas/expo-android/commit/11bf4d06ab686b647d60b612c4e096265090b462)), closes [#32](https://github.com/frndchagas/expo-android/issues/32)
+
 ## [0.5.2](https://github.com/frndchagas/expo-android/compare/expo-android-v0.5.1...expo-android-v0.5.2) (2026-08-24)
 
 
